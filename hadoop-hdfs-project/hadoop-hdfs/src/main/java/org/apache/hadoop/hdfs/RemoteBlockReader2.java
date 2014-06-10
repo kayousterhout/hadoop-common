@@ -109,18 +109,37 @@ public class RemoteBlockReader2  implements BlockReader {
   private final boolean verifyChecksum;
 
   private boolean sentStatusCode = false;
-  
+
   byte[] skipBuf = null;
   ByteBuffer checksumBytes = null;
   /** Amount of unread data in the current received packet */
   int dataLeft = 0;
+
+  public static final readTimeNanos = new ThreadLocal<Long>() {
+    @Override
+    protected Long initialValue() {
+      return 0;
+    }
+  }
+
+  public static final totalPacketsRead = new ThreadLocal<Integer>() {
+    @Override
+    protected Integer initialValue() {
+      return 0;
+    }
+  }
   
   @Override
   public synchronized int read(byte[] buf, int off, int len) 
                                throws IOException {
-
     if (curDataSlice == null || curDataSlice.remaining() == 0 && bytesNeededToFinish > 0) {
-      readNextPacket();
+      Long startTimeNanos = System.nanoTime()
+      try {
+        readNextPacket();
+      } finally {
+        readTimeNanos.get() += System.nanoTime() - startTimeNanos;
+        totalPacketsRead.get() += 1;
+      }
     }
     if (curDataSlice.remaining() == 0) {
       // we're at EOF now
@@ -137,7 +156,13 @@ public class RemoteBlockReader2  implements BlockReader {
   @Override
   public int read(ByteBuffer buf) throws IOException {
     if (curDataSlice == null || curDataSlice.remaining() == 0 && bytesNeededToFinish > 0) {
-      readNextPacket();
+      Long startTimeNanos = System.nanoTime();
+      try {
+        readNextPacket();
+      } finally {
+        readTimeNanos.get() += System.nanoTime() - startTimeNanos;
+        totalPacketsRead.get() += 1;
+      }
     }
     if (curDataSlice.remaining() == 0) {
       // we're at EOF now
