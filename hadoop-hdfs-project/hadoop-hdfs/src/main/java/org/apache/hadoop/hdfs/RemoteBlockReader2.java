@@ -115,30 +115,30 @@ public class RemoteBlockReader2  implements BlockReader {
   /** Amount of unread data in the current received packet */
   int dataLeft = 0;
 
-  public static final readTimeNanos = new ThreadLocal<Long>() {
+  public static final ThreadLocal<Long> readTimeNanos = new ThreadLocal<Long>() {
     @Override
     protected Long initialValue() {
-      return 0;
+      return 0L;
     }
-  }
+  };
 
-  public static final totalPacketsRead = new ThreadLocal<Integer>() {
+  public static final ThreadLocal<Integer> totalPacketsRead = new ThreadLocal<Integer>() {
     @Override
     protected Integer initialValue() {
       return 0;
     }
-  }
+  };
   
   @Override
   public synchronized int read(byte[] buf, int off, int len) 
                                throws IOException {
     if (curDataSlice == null || curDataSlice.remaining() == 0 && bytesNeededToFinish > 0) {
-      Long startTimeNanos = System.nanoTime()
+      Long startTimeNanos = System.nanoTime();
       try {
         readNextPacket();
       } finally {
-        readTimeNanos.get() += System.nanoTime() - startTimeNanos;
-        totalPacketsRead.get() += 1;
+        readTimeNanos.set(readTimeNanos.get() + System.nanoTime() - startTimeNanos);
+        totalPacketsRead.set(totalPacketsRead.get() + 1);
       }
     }
     if (curDataSlice.remaining() == 0) {
@@ -160,8 +160,8 @@ public class RemoteBlockReader2  implements BlockReader {
       try {
         readNextPacket();
       } finally {
-        readTimeNanos.get() += System.nanoTime() - startTimeNanos;
-        totalPacketsRead.get() += 1;
+        readTimeNanos.set(readTimeNanos.get() + System.nanoTime() - startTimeNanos);
+        totalPacketsRead.set(totalPacketsRead.get() + 1);
       }
     }
     if (curDataSlice.remaining() == 0) {
