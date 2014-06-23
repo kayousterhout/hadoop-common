@@ -139,7 +139,7 @@ public class DFSOutputStream extends FSOutputSummer implements Syncable {
   private boolean shouldSyncBlock = false; // force blocks to disk upon close
 
   /** Variables to track information about time spent blocked on writing to HDFS. */
-  public static final writeTimeNanos = new ThreadLocal<Long>() {
+  public static final ThreadLocal<Long> writeTimeNanos = new ThreadLocal<Long>() {
     @Override
     protected Long initialValue() {
       return 0L;
@@ -1525,7 +1525,7 @@ public class DFSOutputStream extends FSOutputSummer implements Syncable {
 
   private void flushOrSync(boolean isSync) throws IOException {
     Long startTimeNanos = System.nanoTime();
-    Long writeTimeNanosStartValue = writeTimeNanos;
+    Long writeTimeNanosStartValue = writeTimeNanos.get();
     dfsClient.checkOpen();
     isClosed();
     try {
@@ -1749,7 +1749,7 @@ public class DFSOutputStream extends FSOutputSummer implements Syncable {
   @Override
   public synchronized void close() throws IOException {
     Long startTimeNanos = System.nanoTime();
-    Long writeTimeNanosStartValue = writeTimeNanos;
+    Long writeTimeNanosStartValue = writeTimeNanos.get();
     if (closed) {
       IOException e = lastException;
       if (e == null)
