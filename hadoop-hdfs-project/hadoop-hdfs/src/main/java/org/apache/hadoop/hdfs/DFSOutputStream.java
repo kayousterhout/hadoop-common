@@ -1385,7 +1385,7 @@ public class DFSOutputStream extends FSOutputSummer implements Syncable {
   }
 
   private void waitAndQueueCurrentPacket() throws IOException {
-    Long startTimeNanos = System.nanoTime()
+    Long startTimeNanos = System.nanoTime();
     synchronized (dataQueue) {
       // If queue is full, then wait till we have enough space
       while (!closed && dataQueue.size() + ackQueue.size()  > MAX_PACKETS) {
@@ -1406,7 +1406,7 @@ public class DFSOutputStream extends FSOutputSummer implements Syncable {
       isClosed();
       queueCurrentPacket();
     }
-    writeTimeNanos.set(writeTimeNanos.get() + System.nanoTime() - startTimeNanos)
+    writeTimeNanos.set(writeTimeNanos.get() + System.nanoTime() - startTimeNanos);
   }
 
   // @see FSOutputSummer#writeChunk()
@@ -1635,7 +1635,7 @@ public class DFSOutputStream extends FSOutputSummer implements Syncable {
      // Set writeTimeNanos based on its value at the beginning of this function
       // to avoid double-counting (since waitAndQueueCurrentPacket() also increments
       // writeTimeNanos).
-      writeTimeNanos.set(writeTimeNanosStartValue + System.nanoTime() - startTimeNanos)
+      writeTimeNanos.set(writeTimeNanosStartValue + System.nanoTime() - startTimeNanos);
     }
   }
 
@@ -1748,8 +1748,8 @@ public class DFSOutputStream extends FSOutputSummer implements Syncable {
    */
   @Override
   public synchronized void close() throws IOException {
-    Long startTimeNanos = System.nanoTime()
-    Long writeTimeNanosStartValue = writeTimeNanos
+    Long startTimeNanos = System.nanoTime();
+    Long writeTimeNanosStartValue = writeTimeNanos;
     if (closed) {
       IOException e = lastException;
       if (e == null)
@@ -1783,7 +1783,7 @@ public class DFSOutputStream extends FSOutputSummer implements Syncable {
       // Set writeTimeNanos based on its value at the beginning of this function
       // to avoid double-counting (since waitAndQueueCurrentPacket() also increments
       // writeTimeNanos).
-      writeTimeNanos.set(writeTimeNanosStartValue + System.nanoTime() - startTimeNanos)
+      writeTimeNanos.set(writeTimeNanosStartValue + System.nanoTime() - startTimeNanos);
     }
   }
 
