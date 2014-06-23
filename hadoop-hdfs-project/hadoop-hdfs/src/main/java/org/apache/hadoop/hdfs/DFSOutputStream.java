@@ -137,6 +137,14 @@ public class DFSOutputStream extends FSOutputSummer implements Syncable {
   private Progressable progress;
   private final short blockReplication; // replication factor of file
   private boolean shouldSyncBlock = false; // force blocks to disk upon close
+
+  /** Variables to track information about time spent blocked on writing to HDFS. */
+  public static final writeTimeNanos = new ThreadLocal<Long>() {
+    @Override
+    protected Long initialValue() {
+      return 0L;
+    }
+  };
   
   private class Packet {
     long    seqno;               // sequencenumber of buffer in block
@@ -1377,6 +1385,7 @@ public class DFSOutputStream extends FSOutputSummer implements Syncable {
   }
 
   private void waitAndQueueCurrentPacket() throws IOException {
+    Long startTimeNanos = System.nanoTime()
     synchronized (dataQueue) {
       // If queue is full, then wait till we have enough space
       while (!closed && dataQueue.size() + ackQueue.size()  > MAX_PACKETS) {
@@ -1397,6 +1406,7 @@ public class DFSOutputStream extends FSOutputSummer implements Syncable {
       isClosed();
       queueCurrentPacket();
     }
+    writeTimeNanos.set(writeTimeNanos.get() + System.nanoTime() - startTimeNanos)
   }
 
   // @see FSOutputSummer#writeChunk()
@@ -1514,6 +1524,8 @@ public class DFSOutputStream extends FSOutputSummer implements Syncable {
   }
 
   private void flushOrSync(boolean isSync) throws IOException {
+    Long startTimeNanos = System.nanoTime();
+    Long writeTimeNanosStartValue = writeTimeNanos;
     dfsClient.checkOpen();
     isClosed();
     try {
@@ -1619,6 +1631,11 @@ public class DFSOutputStream extends FSOutputSummer implements Syncable {
         }
       }
       throw e;
+    } finally {
+     // Set writeTimeNanos based on its value at the beginning of this function
+      // to avoid double-counting (since waitAndQueueCurrentPacket() also increments
+      // writeTimeNanos).
+      writeTimeNanos.set(writeTimeNanosStartValue + System.nanoTime() - startTimeNanos)
     }
   }
 
@@ -1652,6 +1669,10 @@ public class DFSOutputStream extends FSOutputSummer implements Syncable {
   /**
    * Waits till all existing data is flushed and confirmations 
    * received from datanodes. 
+   *
+   * There is no logging for the network write time here, based on the
+   * assumption that this function is always called by other functions
+   * that do their own logging (e.g., close()).
    */
   private void flushInternal() throws IOException {
     long toWaitFor;
@@ -1727,6 +1748,8 @@ public class DFSOutputStream extends FSOutputSummer implements Syncable {
    */
   @Override
   public synchronized void close() throws IOException {
+    Long startTimeNanos = System.nanoTime()
+    Long writeTimeNanosStartValue = writeTimeNanos
     if (closed) {
       IOException e = lastException;
       if (e == null)
@@ -1757,6 +1780,10 @@ public class DFSOutputStream extends FSOutputSummer implements Syncable {
       dfsClient.endFileLease(src);
     } finally {
       closed = true;
+      // Set writeTimeNanos based on its value at the beginning of this function
+      // to avoid double-counting (since waitAndQueueCurrentPacket() also increments
+      // writeTimeNanos).
+      writeTimeNanos.set(writeTimeNanosStartValue + System.nanoTime() - startTimeNanos)
     }
   }
 
