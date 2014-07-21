@@ -145,6 +145,14 @@ public class DFSOutputStream extends FSOutputSummer implements Syncable {
       return 0L;
     }
   };
+
+  /** Tracks the total number of bytes written to HDFS. */
+  public static final ThreadLocal<Long> bytesWritten = new ThreadLocal<Long>() {
+    @Override
+    protected Long initialValue() {
+      return 0L;
+    }
+  };
   
   private class Packet {
     long    seqno;               // sequencenumber of buffer in block
@@ -1486,6 +1494,7 @@ public class DFSOutputStream extends FSOutputSummer implements Syncable {
         lastFlushOffset = 0;
       }
     }
+    bytesWritten.set(bytesWritten.get() + len);
   }
 
   @Override
