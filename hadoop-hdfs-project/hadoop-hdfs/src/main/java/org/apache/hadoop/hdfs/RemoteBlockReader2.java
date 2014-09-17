@@ -115,6 +115,13 @@ public class RemoteBlockReader2  implements BlockReader {
   /** Amount of unread data in the current received packet */
   int dataLeft = 0;
 
+  public static final ThreadLocal<Long> openTimeNanos = new ThreadLocal<Long>() {
+    @Override
+    protected Long initialValue() {
+      return 0L;
+    }
+  };
+
   public static final ThreadLocal<Long> readTimeNanos = new ThreadLocal<Long>() {
     @Override
     protected Long initialValue() {
@@ -425,8 +432,10 @@ public class RemoteBlockReader2  implements BlockReader {
     //
     DataInputStream in = new DataInputStream(ioStreams.in);
 
+    Long startTimeNanos = System.nanoTime();
     BlockOpResponseProto status = BlockOpResponseProto.parseFrom(
         vintPrefixed(in));
+    openTimeNanos.set(openTimeNanos.get() + System.nanoTime() - startTimeNanos);
     checkSuccess(status, sock, block, file);
     ReadOpChecksumInfoProto checksumInfo =
       status.getReadOpChecksumInfo();
