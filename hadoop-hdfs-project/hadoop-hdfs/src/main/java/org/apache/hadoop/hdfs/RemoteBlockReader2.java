@@ -135,7 +135,14 @@ public class RemoteBlockReader2  implements BlockReader {
       return 0;
     }
   };
-  
+ 
+  public static final ThreadLocal<Integer> totalBytesRead = new ThreadLocal<Integer>() {
+    @Override
+    protected Integer initialValue() {
+      return 0;
+    }
+  };
+   
   @Override
   public synchronized int read(byte[] buf, int off, int len) 
                                throws IOException {
@@ -154,6 +161,7 @@ public class RemoteBlockReader2  implements BlockReader {
     }
     
     int nRead = Math.min(curDataSlice.remaining(), len);
+    totalBytesRead.set(totalBytesRead.get() + nRead);
     curDataSlice.get(buf, off, nRead);
     
     return nRead;
