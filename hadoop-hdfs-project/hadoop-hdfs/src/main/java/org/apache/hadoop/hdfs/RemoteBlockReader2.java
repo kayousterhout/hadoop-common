@@ -136,10 +136,10 @@ public class RemoteBlockReader2  implements BlockReader {
     }
   };
  
-  public static final ThreadLocal<Integer> totalBytesRead = new ThreadLocal<Integer>() {
+  public static final ThreadLocal<Long> totalBytesRead = new ThreadLocal<Long>() {
     @Override
-    protected Integer initialValue() {
-      return 0;
+    protected Long initialValue() {
+      return 0L;
     }
   };
    
